@@ -1,73 +1,94 @@
-package com.sat.tmf;
+package expense.com;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
 /**
  * Servlet implementation class LoginServlet
  */
-
-
-@WebServlet(
-    urlPatterns = "/LoginServlet"
-)
+@WebServlet("/LoginServlet")
 public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	ServletConfig sConf = null;
        
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
     public LoginServlet() {
         super();
+        // TODO Auto-generated constructor stub
     }
-    
-    
-	@Override
-	public void init() throws ServletException {
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		//response.getWriter().append("Served at: ").append(request.getContextPath());
+	}
+		    
+        
 	
-	}
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		//doGet(request, response);
+	     String username = request.getParameter("user_name");
+	        //String password = request.getParameter("password");
 
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		
-		HttpSession session =request.getSession();
-		
-		ServletContext sContext = getServletContext();
-		
-		System.out.println("Context Path:"+sContext.getContextPath());
-		Date dt = new Date();
-		sContext.setAttribute("user_name","SATYA"+dt.getTime());
-		request.getCookies();
-		List<String> list = Collections.list(sContext.getInitParameterNames());
-		
-		for(String str:list) {
-			System.out.println(str);
-		}
-		
-		String userName = request.getParameter("user_name");
-		String userPassword = request.getParameter("user_password");
-		
-		if(true) {
-			
-			response.sendRedirect("http://localhost:8080/FirstWebApp/FetchUserExpensesServlet");
-			session.setAttribute("user_name", userName);
-		}
-		
-	}
+	        String user_id = getUserIdByUsername(username);
+	        String userName = request.getParameter("user_name");
 
-	@Override
-	public void destroy() {
-		System.out.println("Login Servlet Destroyed");
-	}
+	        if (user_id != null) {
+	            // Create a session
+	            HttpSession session = request.getSession();
+	            ServletContext sContext = getServletContext();
+	            // Set userId attribute in the session
+	            sContext.setAttribute("user_id", user_id);
+	            //session.setAttribute("user_id", user_id);
+	            sContext.setAttribute("user_name", userName);
 
-}
+
+	            // Redirect to a welcome page or any other page after successful login
+	            response.sendRedirect("http://localhost:8081/expense-project/user_home.html");
+	            response.sendRedirect("http://localhost:8081/expense-project/FetchUserExpensesServlet");
+	            session.setAttribute("user_id", user_id);
+	           session.setAttribute("user_name", userName);
+
+
+
+	        } else {
+	            // Redirect back to the login page with an error message
+	            response.sendRedirect("http://localhost:8081/expense-project/");
+	        }
+	    }
+	    public String getUserIdByUsername(String username) {
+	        try (Connection connection = DBConnection.getConnection()) {
+	            String query = "SELECT user_id FROM user_info WHERE user_name = ?";
+	            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+	                preparedStatement.setString(1, username);
+	                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+	                    if (resultSet.next()) {
+	                        return resultSet.getString("user_id");
+	                    }
+	                }
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return null;
+	        }
+	        return null;
+	    }
+	}
